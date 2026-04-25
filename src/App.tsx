@@ -161,11 +161,12 @@ function App() {
 
         if (results.landmarks) {
           for (const landmarks of results.landmarks) {
-            drawingUtils.drawConnectors(landmarks, HandLandmarker.HAND_CONNECTIONS, {
-              color: "#00FF00",
-              lineWidth: 5
-            });
-            drawingUtils.drawLandmarks(landmarks, { color: "#FF0000", lineWidth: 2 });
+            // Remove drawing of AI lines (red & green) so the recording looks clean for social media
+            // drawingUtils.drawConnectors(landmarks, HandLandmarker.HAND_CONNECTIONS, {
+            //   color: "#00FF00",
+            //   lineWidth: 5
+            // });
+            // drawingUtils.drawLandmarks(landmarks, { color: "#FF0000", lineWidth: 2 });
 
             // Check if any landmark is in the "face area" (center of the screen)
             // Normalised coordinates: match with CSS .face-area-box (left: 20%, top: 30%, width: 60%, height: 50%)
