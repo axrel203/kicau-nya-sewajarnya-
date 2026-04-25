@@ -24,19 +24,56 @@ function App() {
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isActiveRef = useRef(false);
 
+  // Audio mix refs for recording
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const mediaStreamDestinationRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const catVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    // Load the cat video for drawing onto the canvas
+    const v = document.createElement('video');
+    v.src = "/hand_icon.webm";
+    v.loop = true;
+    v.muted = true;
+    v.playsInline = true;
+    v.play().catch(e => console.log("Cat video play error:", e));
+    catVideoRef.current = v;
+  }, []);
+
   const handleRecordClick = useCallback(() => {
     if (isRecording) {
       mediaRecorderRef.current?.stop();
       setIsRecording(false);
     } else {
-      const stream = videoRef.current?.srcObject as MediaStream;
-      if (!stream) {
-        alert("Video stream tidak tersedia");
-        return;
+      if (!canvasRef.current) return;
+
+      let audioTracks: MediaStreamTrack[] = [];
+      if (audioRef.current) {
+        if (!audioContextRef.current) {
+          const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+          const audioCtx = new AudioContextClass();
+          audioContextRef.current = audioCtx;
+          
+          const source = audioCtx.createMediaElementSource(audioRef.current);
+          sourceNodeRef.current = source;
+          
+          const dest = audioCtx.createMediaStreamDestination();
+          mediaStreamDestinationRef.current = dest;
+          
+          source.connect(dest);
+          source.connect(audioCtx.destination);
+        }
+        audioTracks = mediaStreamDestinationRef.current?.stream.getAudioTracks() || [];
       }
 
+      // Capture the canvas stream at 30 FPS
+      const canvasStream = canvasRef.current.captureStream(30);
+      const tracks = [...canvasStream.getVideoTracks(), ...audioTracks];
+      const combinedStream = new MediaStream(tracks);
+
       recordedChunksRef.current = [];
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+      const mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
       
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -117,6 +154,9 @@ function App() {
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
+        // Draw the camera video onto the canvas first (background)
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
         let handDetectedNearFace = false;
 
         if (results.landmarks) {
@@ -160,6 +200,17 @@ function App() {
               pauseTimeoutRef.current = null;
             }, 1500); // 1500ms delay before stopping to ensure smoothness on mobile
           }
+        }
+
+        // Draw cats onto the canvas if active
+        if (isActiveRef.current && catVideoRef.current && !catVideoRef.current.paused) {
+          icons.forEach(icon => {
+            const sizePx = parseFloat(icon.size);
+            const left = (parseFloat(icon.left) / 100) * canvas.width;
+            const top = (parseFloat(icon.top) / 100) * canvas.height;
+            // Draw the cat video
+            ctx.drawImage(catVideoRef.current, left - sizePx/2, top - sizePx/2, sizePx, sizePx);
+          });
         }
       }
       requestAnimationFrame(predict);
@@ -211,24 +262,6 @@ function App() {
             />
             
             <div className={`face-area-box ${isHandInFaceArea ? 'active' : ''}`}></div>
-
-            {isHandInFaceArea && icons.map((icon) => (
-              <div 
-                key={icon.id}
-                className="floating-icon"
-                style={{ top: icon.top, left: icon.left, width: icon.size, height: icon.size }}
-              >
-                <video 
-                  src="/hand_icon.webm" 
-                  loop 
-                  muted 
-                  autoPlay
-                  playsInline
-                  className="icon-video"
-                  style={{ animationDelay: icon.delay, width: '100%', height: '100%' }}
-                />
-              </div>
-            ))}
           </div>
 
           <div className="controls">
