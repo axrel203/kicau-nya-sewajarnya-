@@ -60,13 +60,17 @@ function App() {
   }, [isRecording]);
 
   useEffect(() => {
+    const isMobile = window.innerWidth <= 768;
+    const baseSize = isMobile ? 60 : 120;
+    const variance = isMobile ? 60 : 120;
+    
     // Generate 12 random positions and sizes for icons
     const newIcons = Array.from({ length: 12 }, (_, i) => ({
       id: i,
       top: `${Math.random() * 100}%`,
       left: `${Math.random() * 100}%`,
       delay: `${Math.random() * 2}s`,
-      size: `${Math.random() * 300 + 300}px` // 300px to 600px
+      size: `${Math.random() * variance + baseSize}px` // Smaller sizes
     }));
     setIcons(newIcons);
   }, []);
