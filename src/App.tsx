@@ -21,6 +21,9 @@ function App() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
 
+  const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isActiveRef = useRef(false);
+
   const handleRecordClick = useCallback(() => {
     if (isRecording) {
       mediaRecorderRef.current?.stop();
@@ -132,16 +135,29 @@ function App() {
           }
         }
 
-        setIsHandInFaceArea(handDetectedNearFace);
-        
-        // Control music
+        // Control music and UI with debounce to prevent stuttering
         if (handDetectedNearFace) {
-          if (audioRef.current && audioRef.current.paused) {
-            audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+          if (pauseTimeoutRef.current) {
+            clearTimeout(pauseTimeoutRef.current);
+            pauseTimeoutRef.current = null;
+          }
+          if (!isActiveRef.current) {
+            isActiveRef.current = true;
+            setIsHandInFaceArea(true);
+            if (audioRef.current && audioRef.current.paused) {
+              audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+            }
           }
         } else {
-          if (audioRef.current && !audioRef.current.paused) {
-            audioRef.current.pause();
+          if (isActiveRef.current && !pauseTimeoutRef.current) {
+            pauseTimeoutRef.current = setTimeout(() => {
+              isActiveRef.current = false;
+              setIsHandInFaceArea(false);
+              if (audioRef.current && !audioRef.current.paused) {
+                audioRef.current.pause();
+              }
+              pauseTimeoutRef.current = null;
+            }, 800); // 800ms delay before stopping
           }
         }
       }
