@@ -61,8 +61,8 @@ function App() {
 
   useEffect(() => {
     const isMobile = window.innerWidth <= 768;
-    const baseSize = isMobile ? 60 : 120;
-    const variance = isMobile ? 60 : 120;
+    const baseSize = isMobile ? 100 : 120;
+    const variance = isMobile ? 100 : 120;
     
     // Generate 12 random positions and sizes for icons
     const newIcons = Array.from({ length: 12 }, (_, i) => ({
