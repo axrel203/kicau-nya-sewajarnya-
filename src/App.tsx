@@ -67,8 +67,9 @@ function App() {
     const baseSize = isMobile ? 100 : 120;
     const variance = isMobile ? 100 : 120;
     
-    // Generate 12 random positions and sizes for icons
-    const newIcons = Array.from({ length: 12 }, (_, i) => ({
+    const numIcons = isMobile ? 4 : 8; // Reduce icons on mobile to improve performance
+    // Generate random positions and sizes for icons
+    const newIcons = Array.from({ length: numIcons }, (_, i) => ({
       id: i,
       top: `${Math.random() * 100}%`,
       left: `${Math.random() * 100}%`,
@@ -89,7 +90,7 @@ function App() {
           delegate: "GPU"
         },
         runningMode: "VIDEO",
-        numHands: 2
+        numHands: 1 // Optimize for performance on mobile
       });
       setHandLandmarker(handLandmarker);
       setIsLoaded(true);
@@ -157,7 +158,7 @@ function App() {
                 audioRef.current.pause();
               }
               pauseTimeoutRef.current = null;
-            }, 800); // 800ms delay before stopping
+            }, 1500); // 1500ms delay before stopping to ensure smoothness on mobile
           }
         }
       }
