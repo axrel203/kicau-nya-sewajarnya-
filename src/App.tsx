@@ -146,6 +146,7 @@ function App() {
     if (!ctx) return;
     const drawingUtils = new DrawingUtils(ctx);
 
+    let animationFrameId: number;
     let lastVideoTime = -1;
     const predict = async () => {
       if (video.currentTime !== lastVideoTime) {
@@ -214,7 +215,7 @@ function App() {
           });
         }
       }
-      requestAnimationFrame(predict);
+      animationFrameId = requestAnimationFrame(predict);
     };
 
     navigator.mediaDevices.getUserMedia({ video: true })
@@ -228,6 +229,7 @@ function App() {
       });
 
     return () => {
+      cancelAnimationFrame(animationFrameId);
       if (video.srcObject) {
         (video.srcObject as MediaStream).getTracks().forEach(track => track.stop());
       }
